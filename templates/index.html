@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartInvoice AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main>
+        <h1>SmartInvoice AI</h1>
+
+        <form method="POST" enctype="multipart/form-data">
+            <label for="invoice">Upload invoice</label>
+            <input id="invoice" name="invoice" type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+            <button type="submit">Analyze Invoice</button>
+        </form>
+
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+
+        {% if data %}
+            <h2>Invoice Summary</h2>
+            <table>
+                <tr><th>Field</th><th>Value</th></tr>
+                <tr><td>Invoice Number</td><td>{{ data.get('invoice_number', '') }}</td></tr>
+                <tr><td>Invoice Date</td><td>{{ data.get('invoice_date', '') }}</td></tr>
+                <tr><td>Vendor</td><td>{{ data.get('vendor', '') }}</td></tr>
+                <tr><td>Customer</td><td>{{ data.get('customer', '') }}</td></tr>
+                <tr><td>Subtotal</td><td>{{ data.get('subtotal', '') }}</td></tr>
+                <tr><td>Tax</td><td>{{ data.get('tax', '') }}</td></tr>
+                <tr><td>Total</td><td>{{ data.get('total', '') }}</td></tr>
+            </table>
+
+            <h2>Items</h2>
+            {% if data.get('items') %}
+                <table>
+                    <tr><th>Item</th><th>Quantity</th><th>Amount</th></tr>
+                    {% for item in data.get('items', []) %}
+                        <tr>
+                            <td>{{ item.get('item', '') }}</td>
+                            <td>{{ item.get('quantity', '') }}</td>
+                            <td>{{ item.get('amount', '') }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No items found.</p>
+            {% endif %}
+
+            <a class="button" href="{{ url_for('download_excel') }}">Download Excel</a>
+        {% endif %}
+    </main>
+</body>
+</html>

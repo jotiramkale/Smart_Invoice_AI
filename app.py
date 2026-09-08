@@ -1,6 +1,7 @@
 import os
 import json
 import pandas as pd
+from flask import Flask, render_template, request, send_file
 
 from dotenv import load_dotenv
 from groq import Groq
@@ -131,3 +132,59 @@ def export_excel(data, file_name="invoice_output.xlsx"):
         )
 
     return file_name
+
+
+# Flask application setup
+app = Flask(__name__)
+UPLOAD_FOLDER = "uploads"
+EXCEL_FILE = os.path.join(UPLOAD_FOLDER, "invoice_output.xlsx")
+ALLOWED_EXTENSIONS = {"pdf", "jpg", "jpeg", "png"}
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+def allowed_file(file_name):
+    return "." in file_name and file_name.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route("/", methods=["GET", "POST"])
+def index():
+    data = None
+    error = None
+
+    if request.method == "POST":
+        uploaded_file = request.files.get("invoice")
+
+        if uploaded_file is None or uploaded_file.filename == "":
+            error = "Please choose an invoice file."
+        elif not allowed_file(uploaded_file.filename):
+            error = "Please upload a PDF, JPG, JPEG, or PNG file."
+        else:
+            file_name = uploaded_file.filename
+            file_path = os.path.join(UPLOAD_FOLDER, file_name)
+
+            try:
+                uploaded_file.save(file_path)
+                text = extract_text(file_path)
+                response = extract_invoice_json(text)
+                data = parse_json(response)
+                export_excel(data, EXCEL_FILE)
+            except Exception as exception:
+                error = str(exception)
+            finally:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
+    return render_template("index.html", data=data, error=error)
+
+
+@app.route("/download")
+def download_excel():
+    if not os.path.exists(EXCEL_FILE):
+        return "Analyze an invoice before downloading Excel.", 404
+
+    return send_file(EXCEL_FILE, as_attachment=True, download_name="invoice_output.xlsx")
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
