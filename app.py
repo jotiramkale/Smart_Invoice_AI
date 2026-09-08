@@ -18,11 +18,13 @@ client = Groq(
 )
 
 # OCR model
-ocr = PaddleOCR(lang="en")
+ocr = None
 
 
 # Extract text from PDF or Image
 def extract_text(file_path):
+
+    global ocr
 
     if file_path.endswith(".pdf"):
 
@@ -37,6 +39,9 @@ def extract_text(file_path):
         return text
 
     else:
+
+        if ocr is None:
+            ocr = PaddleOCR(lang="en")
 
         result = ocr.ocr(file_path)
 
@@ -188,4 +193,5 @@ def download_excel():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
