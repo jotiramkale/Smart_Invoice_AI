@@ -9,6 +9,7 @@ from pypdf import PdfReader
 from paddleocr import PaddleOCR
 
 
+
 # Load API key
 load_dotenv()
 
